@@ -12,24 +12,67 @@ const grading = globalThis.QuizGrading;
 for(const q of questions){const r=state.responses[q.id];if(r && !r.skipped) r.correct=grading.isCorrect(q,r.selected,r.matches);}
 const save=()=>{try{localStorage.setItem(key,JSON.stringify(state));}catch{document.querySelector('.save-note').textContent='Браузер не разрешил сохранить прогресс.';}};
 const typeText=q=>q.type==='single'?'Один ответ':q.type==='multi'?'Несколько ответов':'Сопоставление';
-function fit(){const content=$('question-content'),stage=$('stage');if(mode!=='practice')return;content.style.transform='';content.style.width='100%';const scale=Math.min(1,stage.clientHeight/content.scrollHeight);if(scale<1)content.style.transform=`scale(${scale})`;}
-new ResizeObserver(fit).observe($('stage'));
+let contentPages = [], contentPart = 0, revealResult = false;
+let fitting = false, fitFrame = 0;
+function showContentPart(index) {
+ contentPart = Math.max(0, Math.min(contentPages.length - 1, index));
+ contentPages.forEach((page, i) => page.forEach(node => { node.hidden = i !== contentPart; }));
+ $('part-position').textContent = `Часть ${contentPart + 1} из ${contentPages.length}`;
+ $('part-previous').disabled = contentPart === 0;
+ $('part-next').disabled = contentPart === contentPages.length - 1;
+}
+function fit() {
+ if (mode !== 'practice' || fitting) return;
+ fitting = true;
+ const content = $('question-content'), stage = $('stage'), pager = $('content-pager');
+ const nodes = [$('question-title'), $('instruction'), ...$('options').children];
+ if ($('feedback').childElementCount) nodes.push($('feedback'));
+ content.style.transform = ''; content.style.width = '100%';
+ pager.hidden = true;
+ nodes.forEach(node => { node.hidden = false; });
+ if (content.scrollHeight <= stage.clientHeight + 1) {
+  contentPages = [nodes]; contentPart = 0;
+ } else {
+  pager.hidden = false;
+  nodes.forEach(node => { node.hidden = true; });
+  contentPages = []; let page = [];
+  for (const node of nodes) {
+   node.hidden = false;
+   if (page.length && content.scrollHeight > stage.clientHeight + 1) {
+    node.hidden = true;
+    contentPages.push(page);
+    page.forEach(item => { item.hidden = true; });
+    page = []; node.hidden = false;
+   }
+   page.push(node);
+  }
+  if (page.length) contentPages.push(page);
+ }
+ showContentPart(revealResult ? contentPages.length - 1 : contentPart);
+ revealResult = false;
+ fitting = false;
+}
+function scheduleFit() { cancelAnimationFrame(fitFrame); fitFrame = requestAnimationFrame(fit); }
+new ResizeObserver(scheduleFit).observe($('stage'));
+window.visualViewport?.addEventListener('resize', scheduleFit);
+$('part-previous').onclick = () => showContentPart(contentPart - 1);
+$('part-next').onclick = () => showContentPart(contentPart + 1);
 function updateMap(){let total=0,correct=0;questions.forEach(q=>{const r=state.responses[q.id];if(r && !r.skipped){total++;if(r.correct)correct++;}const b=$('map-'+q.id);b.className=(r?(r.correct?'done':'wrong'):'')+(q.id===questions[state.index].id?' current':'');b.setAttribute('aria-current',q.id===questions[state.index].id?'step':'false');b.title=`Вопрос ${q.id}${r?(r.skipped?' — некорректное задание':r.correct?' — верно':' — повторить'):''}`;});$('score').textContent=correct;$('attempted').textContent=total;$('map-count').textContent=Object.keys(state.responses).length+' / '+questions.length;}
-function renderQuestion(){const q=questions[state.index],response=state.responses[q.id],displayAnswer=grading.displayAnswer(q,response);selected=response?.selected?[...response.selected]:[];matches=response?.matches?[...response.matches]:[];$('question-title').textContent=q.question;$('position').textContent=`Вопрос ${q.id} из ${questions.length}`;$('type-label').textContent=typeText(q);$('jump').value=state.index;$('progress-fill').style.width=((state.index+1)/questions.length*100)+'%';$('instruction').textContent=noAnswer(q)?'В исходном задании нет корректного ответа. Этот вопрос не влияет на результат.':q.type==='single'?'Выберите один вариант — результат появится сразу.':q.type==='multi'?(grading.minimumSelections(q)===1?'Исключение в исходном тесте: допускается выбор одного варианта. Сделайте выбор и нажмите «Проверить».':'Выберите от двух вариантов, затем нажмите «Проверить».'):'Подберите определение для каждого элемента, затем проверьте себя.';
+function renderQuestion(){contentPart=0; const q=questions[state.index],response=state.responses[q.id],displayAnswer=grading.displayAnswer(q,response);selected=response?.selected?[...response.selected]:[];matches=response?.matches?[...response.matches]:[];$('question-title').textContent=q.question;$('position').textContent=`Вопрос ${q.id} из ${questions.length}`;$('type-label').textContent=typeText(q);$('jump').value=state.index;$('progress-fill').style.width=((state.index+1)/questions.length*100)+'%';$('instruction').textContent=noAnswer(q)?'В исходном задании нет корректного ответа. Этот вопрос не влияет на результат.':q.type==='single'?'Выберите один вариант — результат появится сразу.':q.type==='multi'?(grading.minimumSelections(q)===1?'Исключение в исходном тесте: допускается выбор одного варианта. Сделайте выбор и нажмите «Проверить».':'Выберите от двух вариантов, затем нажмите «Проверить».'):'Подберите определение для каждого элемента, затем проверьте себя.';
  $('feedback').innerHTML='';
  if(q.type==='match'){
   const pairs=pairsFor(q),choices=[...new Set([...(q.choices||[]),...pairs.map(p=>p.right)])].sort((a,b)=>a.localeCompare(b,'ru'));
-  $('options').innerHTML=pairs.map((p,i)=>`<label class="match-row ${response?(matches[i]===p.right?'correct':'incorrect'):''}"><span>${esc(p.left)}</span><select data-match="${i}" aria-label="Определение для ${esc(p.left)}" ${response?'disabled':''}><option value="">Выберите определение</option>${choices.map(c=>`<option value="${esc(c)}" ${matches[i]===c?'selected':''}>${esc(c)}</option>`).join('')}</select>${response&&matches[i]!==p.right?`<span class="match-answer">Верно: ${esc(p.right)}</span>`:''}</label>`).join('');
+  $('options').innerHTML=pairs.map((p,i)=>`<label class="match-row ${response?(matches[i]===p.right?'correct':'incorrect'):''}"><span>${esc(p.left)}</span><select data-match="${i}" aria-label="Определение для ${esc(p.left)}" ${response?'disabled':''}><option value="">Выберите определение</option>${choices.map(c=>`<option value="${esc(c)}" ${matches[i]===c?'selected':''}>${esc(c)}</option>`).join('')}</select><span class="match-selection" ${matches[i]?'':'hidden'}>${esc(matches[i]||'')}</span>${response&&matches[i]!==p.right?`<span class="match-answer">Верно: ${esc(p.right)}</span>`:''}</label>`).join('');
  }else{
   $('options').innerHTML=q.options.map((o,i)=>`<label class="option ${response?'locked ':''}${response?(displayAnswer.includes(i)?'correct':selected.includes(i)?'incorrect':''):''}"><input type="${q.type==='single'?'radio':'checkbox'}" name="answer" value="${i}" ${selected.includes(i)?'checked':''} ${response||noAnswer(q)?'disabled':''}><span class="option-label">${esc(o.text)}</span>${response&&displayAnswer.includes(i)?'<span class="status-icon" aria-label="Верный ответ">✓</span>':response&&selected.includes(i)?'<span class="status-icon" aria-label="Неверный ответ">×</span>':''}</label>`).join('');
  }
- $('check').hidden=q.type==='single'||!!response||noAnswer(q);$('check').disabled=true;$('next').hidden=false;$('next').textContent=state.index===questions.length-1?'К результатам →':'Далее →';$('previous').disabled=state.index===0;
+ $('check').hidden=q.type==='single'||!!response||noAnswer(q);$('check').disabled=true;$('next').hidden=false;$('next').textContent=state.index===questions.length-1?'Итоги →':'Далее →';$('previous').disabled=state.index===0;
  if(response)showFeedback(q,response);else if(noAnswer(q)){$('feedback').innerHTML='<div class="result notice"><div><strong>Вопрос с ошибкой</strong><small>Правильного варианта в PDF нет.</small></div><button data-explain>Разбор →</button></div>';}
- updateMap();requestAnimationFrame(fit);
+ updateMap();fit();
 }
 function showFeedback(q,r){const missed=q.verified?.filter(i=>!selected.includes(i)).length;const message=r.skipped?'Некорректное задание':r.correct?'Всё верно':q.type==='multi'&&missed?'Не совсем. Проверьте отмеченные варианты.':'Пока не совсем. Верный ответ отмечен.';$('feedback').innerHTML=`<div class="result ${r.skipped?'notice':r.correct?'':'error'}"><div><strong>${message}</strong><small>${q.warning?'Есть важное пояснение к исходному вопросу.':r.correct?'Ещё один шаг к уверенным знаниям.':'Разбор поможет разобраться и запомнить.'}</small></div><button data-explain>Разбор →</button></div>`;}
-function check(){const q=questions[state.index];if(state.responses[q.id]||noAnswer(q))return;if(q.type==='multi'&&selected.length<grading.minimumSelections(q))return;if(q.type==='match'&&(matches.length!==pairsFor(q).length||matches.some(v=>!v)))return;const correct=grading.isCorrect(q,selected,matches);state.responses[q.id]={selected:[...selected],matches:[...matches],correct};save();renderQuestion();}
-$('options').addEventListener('change',e=>{const q=questions[state.index];if(e.target.matches('input')){selected=[...$('options').querySelectorAll('input:checked')].map(el=>Number(el.value));if(q.type==='single')check();else $('check').disabled=selected.length<grading.minimumSelections(q);}else if(e.target.matches('select')){matches=[...$('options').querySelectorAll('select')].map(el=>el.value);$('check').disabled=matches.some(v=>!v);} });
+function check(){const q=questions[state.index];if(state.responses[q.id]||noAnswer(q))return;if(q.type==='multi'&&selected.length<grading.minimumSelections(q))return;if(q.type==='match'&&(matches.length!==pairsFor(q).length||matches.some(v=>!v)))return;const correct=grading.isCorrect(q,selected,matches);state.responses[q.id]={selected:[...selected],matches:[...matches],correct};save();revealResult=true;renderQuestion();}
+$('options').addEventListener('change',e=>{const q=questions[state.index];if(e.target.matches('input')){selected=[...$('options').querySelectorAll('input:checked')].map(el=>Number(el.value));if(q.type==='single')check();else $('check').disabled=selected.length<grading.minimumSelections(q);}else if(e.target.matches('select')){matches=[...$('options').querySelectorAll('select')].map(el=>el.value);$('check').disabled=matches.some(v=>!v);const detail=e.target.closest('.match-row').querySelector('.match-selection');detail.textContent=e.target.value;detail.hidden=!e.target.value;fit();} });
 function sourceHTML(q){return `<div class="sources">${q.sources.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)} ↗</a>`).join('')}</div>`;}
 function majorityHTML(q){if(q.type==='match')return '<p class="majority">Варианты сопоставления проверены по документации. При неточной формулировке из PDF используется уточнённое определение.</p>';const text=q.answer.length?q.answer.map(i=>q.options[i]?.text).join('; '):'Однозначного выбора большинства нет.';return `<p class="majority"><strong>По голосам в PDF:</strong> ${esc(text)}<br>Оценка в тренажёре — по документации. «За / против» — исходная статистика, а не показатель правильности.</p>`;}
 function alternativesHTML(q){return q.acceptedAnswers?.length>1?`<p class="majority"><strong>Допустимые наборы вариантов (нумерация сверху):</strong> ${q.acceptedAnswers.map(a=>a.map(i=>i+1).join(', ')).join(' или ')}. Оба прочтения засчитываются; причина указана в примечании.</p>`:'';}

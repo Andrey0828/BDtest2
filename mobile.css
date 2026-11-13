@@ -1,0 +1,117 @@
+/* Readable touch layout. Long questions paginate instead of shrinking. */
+html { -webkit-text-size-adjust: 100%; }
+button, select, input, label { touch-action: manipulation; }
+.study-top, .progress-track, .question-footer, .content-pager { flex-shrink: 0; }
+.question-content { display: flow-root; }
+.option-label, .answer-text, .answer-match > *, .sources a { min-width: 0; overflow-wrap: anywhere; }
+.content-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; }
+.content-pager span { font-size: 13px; color: var(--muted); }
+.content-pager button { min-height: 44px; }
+.match-selection { grid-column: 1 / -1; font-size: 14px; overflow-wrap: anywhere; color: var(--muted); }
+
+@media (max-width: 767px) {
+  body { height: 100svh; height: 100dvh; display: flex; flex-direction: column; }
+  .header {
+    height: auto; min-height: 112px; flex-shrink: 0; margin: 0;
+    padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+  }
+  .brand { font-size: 16px; min-height: 44px; }
+  .brand svg { width: 28px; height: 28px; }
+  .brand small { font-size: 11px; letter-spacing: .03em; }
+  .reset { min-width: 44px; min-height: 44px; font-size: 12px; padding: 8px 0 8px 10px; }
+  .tabs { order: initial; grid-row: 2; grid-column: 1 / -1; padding: 3px; width: 100%; }
+  .tabs button { flex: 1; min-height: 44px; padding: 8px 12px; font-size: 14px; }
+  .practice {
+    height: auto; flex: 1; min-height: 0; width: 100%; margin: 0; max-width: none;
+    padding: 14px max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .study { height: 100%; }
+  .study-top { font-size: 12px; }
+  .type-label { font-size: 11px; padding: 3px 8px; }
+  .progress-track { margin-top: 10px; }
+  .stage { margin: 16px 0 12px; }
+  h1 { font-size: 22px; line-height: 1.3; margin-bottom: 10px; }
+  .instruction { font-size: 13px; line-height: 1.4; margin: 0 0 16px; }
+  .options { gap: 8px; }
+  .option { min-height: 48px; padding: 12px; gap: 12px; font-size: 16px; line-height: 1.4; }
+  .option input { width: 20px; height: 20px; flex-basis: 20px; }
+  .question-footer { display: grid; grid-template-columns: minmax(60px,1fr) auto minmax(90px,1.3fr); gap: 8px; padding-top: 10px; }
+  .footer-actions { display: contents; }
+  #check { grid-column: 1 / -1; grid-row: 1; }
+  #previous { grid-row: 2; grid-column: 1; }
+  .jump-label { grid-row: 2; grid-column: 2; }
+  #next { grid-row: 2; grid-column: 3; }
+  .primary, .secondary { min-height: 44px; font-size: 14px; padding: 10px 12px; }
+  .jump-label select { max-width: 112px; min-height: 44px; font-size: 16px; padding: 8px 2px; }
+  .content-pager { padding-bottom: 8px; gap: 8px; }
+  .content-pager button { padding: 8px 12px; }
+  .feedback { margin-top: 12px; }
+  .result { padding: 12px; gap: 8px; }
+  .result strong { font-size: 15px; }
+  .result small { font-size: 13px; }
+  .result button { min-height: 44px; min-width: 70px; font-size: 14px; }
+  .match-row { grid-template-columns: minmax(0,1fr); gap: 6px; padding: 12px; font-size: 16px; }
+  .match-row select { min-height: 44px; min-width: 0; font-size: 16px; padding: 8px; }
+  .match-selection { font-size: 14px; line-height: 1.4; }
+  .match-answer { font-size: 14px; }
+  .answers-mode { height: auto; display: block; overflow: auto; }
+  .answers { width: 100%; padding: 28px max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .answers-heading h1 { font-size: 30px; }
+  .answers-heading p { font-size: 14px; }
+  .verified-mark { display: none; }
+  .search-bar { flex-wrap: wrap; margin-top: 24px; }
+  .search { flex-basis: 100%; min-width: 0; }
+  .search input { min-width: 0; font-size: 16px; min-height: 48px; }
+  .answer-meta { flex-wrap: wrap; gap: 6px 12px; }
+  .answer-card h2 { font-size: 20px; }
+  .answer-options li { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 4px 8px; font-size: 16px; padding: 12px; }
+  .answer-options .votes { grid-column: 2; font-size: 12px; }
+  .answer-match { grid-template-columns: 1fr; font-size: 16px; }
+  .explanation { font-size: 16px; }
+  .warning, .majority { font-size: 14px; overflow-wrap: anywhere; }
+  .sources { font-size: 14px; }
+  .sources a { display: inline-flex; align-items: center; min-height: 44px; }
+  dialog { width: calc(100% - 16px); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: 18px; }
+  .dialog-head { position: sticky; top: -18px; margin: -18px -18px 16px; padding: 12px 18px 6px; background: var(--paper); z-index: 1; align-items: center; }
+  .dialog-head h2 { margin: 0; font-size: 18px; }
+  #close-dialog { min-width: 44px; min-height: 44px; font-size: 14px; }
+  .dialog-actions { flex-direction: column; }
+}
+
+@media (max-width: 767px) and (max-height: 650px) {
+  .header { min-height: 100px; padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: 4px; gap: 2px 10px; }
+  .brand small { display: none; }
+  .practice { padding-top: 10px; }
+  .stage { margin: 10px 0 8px; }
+  h1 { font-size: 20px; }
+  .instruction { margin-bottom: 12px; }
+  .option { padding: 10px 12px; }
+}
+
+@media (max-width: 950px) and (orientation: landscape) and (max-height: 500px) {
+  body { display: flex; flex-direction: column; }
+  .header { display: flex; height: 58px; min-height: 58px; padding: 4px max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left)); gap: 16px; flex-wrap: nowrap; margin: 0; }
+  .brand { font-size: 15px; flex-shrink: 0; }
+  .brand small { display: none; }
+  .tabs { width: auto; order: initial; }
+  .tabs button { min-height: 44px; padding: 8px 14px; }
+  .reset { min-height: 44px; }
+  .practice { height: auto; flex: 1; min-height: 0; padding: 6px max(12px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .study-top { font-size: 12px; }
+  .progress-track { margin-top: 4px; }
+  .stage { margin: 8px 0; }
+  h1 { font-size: 20px; }
+  .instruction { margin-bottom: 8px; }
+  .question-footer { display: flex; gap: 10px; padding-top: 6px; }
+  .footer-actions { display: flex; margin-left: auto; }
+  .content-pager { padding-bottom: 4px; }
+  .primary, .secondary, .jump-label select { min-height: 44px; }
+  .answers-mode { display: block; }
+}
+
+@media (hover: none) {
+  .option:active:not(.locked), button:active:not(:disabled) { background-color: #dceadf; color: #1d533b; }
+}
+
+@media (max-width:950px) and (orientation:landscape) and (max-height:500px){.match-row select{min-height:44px;font-size:16px}.option{font-size:16px;min-height:48px}.match-row{font-size:16px}}
