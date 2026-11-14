@@ -12,7 +12,8 @@ const grading = globalThis.QuizGrading;
 for (const q of questions) {
  const response = state.responses[q.id];
  if (!response) continue;
- if (q.original && !response.revisedQuestion) {
+ if ((q.original && !response.revisedQuestion) ||
+     (q.gradingRevision && response.gradingRevision !== q.gradingRevision)) {
   delete state.responses[q.id];
  } else if (!response.skipped) {
   response.correct = grading.isCorrect(q, response.selected, response.matches);
@@ -79,7 +80,7 @@ function renderQuestion(){contentPart=0; const q=questions[state.index],response
  updateMap();fit();
 }
 function showFeedback(q,r){const missed=q.verified?.filter(i=>!selected.includes(i)).length;const message=r.skipped?'Некорректное задание':r.correct?'Всё верно':q.type==='multi'&&missed?'Не совсем. Проверьте отмеченные варианты.':'Пока не совсем. Верный ответ отмечен.';$('feedback').innerHTML=`<div class="result ${r.skipped?'notice':r.correct?'':'error'}"><div><strong>${message}</strong><small>${q.warning?'Есть важное пояснение к исходному вопросу.':r.correct?'Ещё один шаг к уверенным знаниям.':'Разбор поможет разобраться и запомнить.'}</small></div><button data-explain>Разбор →</button></div>`;}
-function check(){const q=questions[state.index];if(state.responses[q.id]||noAnswer(q))return;if(q.type==='multi'&&selected.length<grading.minimumSelections(q))return;if(q.type==='match'&&(matches.length!==pairsFor(q).length||matches.some(v=>!v)))return;const correct=grading.isCorrect(q,selected,matches);state.responses[q.id]={selected:[...selected],matches:[...matches],correct,revisedQuestion:!!q.original};save();revealResult=true;renderQuestion();}
+function check(){const q=questions[state.index];if(state.responses[q.id]||noAnswer(q))return;if(q.type==='multi'&&selected.length<grading.minimumSelections(q))return;if(q.type==='match'&&(matches.length!==pairsFor(q).length||matches.some(v=>!v)))return;const correct=grading.isCorrect(q,selected,matches);state.responses[q.id]={selected:[...selected],matches:[...matches],correct,revisedQuestion:!!q.original,gradingRevision:q.gradingRevision};save();revealResult=true;renderQuestion();}
 $('options').addEventListener('change',e=>{const q=questions[state.index];if(e.target.matches('input')){selected=[...$('options').querySelectorAll('input:checked')].map(el=>Number(el.value));if(q.type==='single')check();else $('check').disabled=selected.length<grading.minimumSelections(q);}else if(e.target.matches('select')){matches=[...$('options').querySelectorAll('select')].map(el=>el.value);$('check').disabled=matches.some(v=>!v);const detail=e.target.closest('.match-row').querySelector('.match-selection');detail.textContent=e.target.value;detail.hidden=!e.target.value;fit();} });
 function sourceHTML(q){return `<div class="sources">${q.sources.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)} ↗</a>`).join('')}</div>`;}
 function majorityHTML(q){
