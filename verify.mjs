@@ -23,7 +23,9 @@ for (const q of questions) {
   }
   assert.equal(q.options.length, 4);
   if (q.type === 'single') assert.ok(q.verified.length <= 1);
+  if (q.type === 'multi') assert.ok(q.verified.length >= 2, `Too few verified options: ${q.id}`);
   for (const answer of grading.answerSets(q)) {
+    if (q.type === 'multi') assert.ok(answer.length >= 2, `Too few accepted options: ${q.id}`);
     assert.equal(new Set(answer).size, answer.length);
     assert.ok(answer.every(i => Number.isInteger(i) && i >= 0 && i < q.options.length));
   }
@@ -45,14 +47,15 @@ check(64, [1, 2, 3], true);
 check(64, [2, 3], false);
 check(16, [0, 1], true);
 check(16, [0, 1, 3], true);
-check(67, [2], true);
+check(67, [2], false);
 check(67, [1, 2], true);
 check(84, [1, 3], true);
 check(84, [1, 2, 3], true);
-check(90, [2], true);
+check(90, [2], false);
 check(90, [0, 2], true);
 check(111, [0, 1, 3], true);
 check(111, [0, 1, 2, 3], true);
 check(75, [2], false);
 check(29, [0, 1], false);
+check(29, [0, 2], true);
 console.log(`119 audited questions; ${cases} grading checks passed.`);

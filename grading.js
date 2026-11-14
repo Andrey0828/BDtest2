@@ -4,14 +4,14 @@ globalThis.QuizGrading = Object.freeze({
     return question.acceptedAnswers || [question.verified];
   },
   minimumSelections(question) {
-    if (question.type !== 'multi') return 1;
-    return Math.min(2, ...this.answerSets(question).map(answer => answer.length));
+    return question.type === 'multi' ? 2 : 1;
   },
   isCorrect(question, selected = [], matches = []) {
     if (question.type === 'match') {
       const pairs = question.verifiedPairs || question.pairs || [];
       return matches.length === pairs.length && pairs.every((pair, index) => matches[index] === pair.right);
     }
+    if (selected.length < this.minimumSelections(question)) return false;
     if (!question.verified.length || new Set(selected).size !== selected.length) return false;
     return this.answerSets(question).some(answer => answer.length === selected.length && answer.every(index => selected.includes(index)));
   },
